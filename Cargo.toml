@@ -1,0 +1,12 @@
+[package]
+name = "olc_rust_sketches"
+version = "0.0.0"
+description = "Learning Rust with the olcPixelGameEngine"
+homepage = "https://github.com/steveruizok/olc_rust_sketches"
+repository = "https://github.com/steveruizok/olc_rust_sketches"
+readme = "README.md"
+keywords = ["olc", "olcPixelGameEngine"]
+license = "MIT"
+
+[dependencies]
+olc_pixel_game_engine = "0.5.0"
