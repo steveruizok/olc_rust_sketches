@@ -51,12 +51,22 @@ impl Point {
     return self;
   }
 
+  pub fn is_equal(&self, other: &Point) -> bool {
+    return self.x == other.x && self.y == other.y;
+  }
+
   pub fn get_dot(&self, other: &Point) -> f32 {
     self.x * other.x + self.y * other.y
   }
 
   pub fn length(&self) -> f32 {
     (self.x * self.x + self.y * self.y).sqrt()
+  }
+
+  pub fn dist(&self, other: &Point) -> f32 {
+    let dx = self.x - other.x;
+    let dy = self.y - other.y;
+    (dx * dx + dy * dy).sqrt()
   }
 
   pub fn get_tan(&self, x: f32, y: f32) -> Point {
@@ -85,6 +95,14 @@ impl Point {
     let pt = Point {
       x: self.x,
       y: self.y,
+    };
+    return pt;
+  }
+
+  pub fn med(&mut self, other: &Point) -> Point {
+    let pt = Point {
+      x: (self.x + other.x) / 2.0,
+      y: (self.y + other.y) / 2.0,
     };
     return pt;
   }
