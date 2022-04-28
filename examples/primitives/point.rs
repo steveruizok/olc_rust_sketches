@@ -63,7 +63,7 @@ impl Point {
     (self.x * self.x + self.y * self.y).sqrt()
   }
 
-  pub fn dist(&self, other: &Point) -> f32 {
+  pub fn dist_point(&self, other: &Point) -> f32 {
     let dx = self.x - other.x;
     let dy = self.y - other.y;
     (dx * dx + dy * dy).sqrt()
@@ -111,6 +111,20 @@ impl Point {
     self.x -= other.x;
     self.y -= other.y;
     return self;
+  }
+
+  pub fn angle(&self, x: f32, y: f32) -> f32 {
+    let dx = x - self.x;
+    let dy = y - self.y;
+    let angle = f32::atan2(dy, dx);
+    return angle;
+  }
+
+  pub fn angle_point(&self, other: &Point) -> f32 {
+    let dx = other.x - self.x;
+    let dy = other.y - self.y;
+    let angle = f32::atan2(dy, dx);
+    return angle;
   }
 
   pub fn draw(&self, color: Option<olc::Pixel>) {
