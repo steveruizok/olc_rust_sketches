@@ -1,6 +1,8 @@
 extern crate olc_pixel_game_engine;
 use crate::olc_pixel_game_engine as olc;
 
+#[path = "./primitives/arc.rs"]
+mod arc;
 #[path = "./primitives/arrow.rs"]
 mod arrow;
 #[path = "./primitives/point.rs"]
@@ -12,9 +14,11 @@ mod segment;
 #[path = "./primitives/shared.rs"]
 mod shared;
 
+use arc::Arc;
 use point::Point;
 // use segment::Segment;
 
+const PI: f32 = std::f32::consts::PI;
 const TAU: f32 = (std::f32::consts::PI) / 2.0;
 
 // For error
@@ -27,7 +31,7 @@ const RATE_OF_CHANGE: f32 = 0.275;
 
 // Radius
 const MIN_RADIUS: f32 = 4.0;
-const MAX_RADIUS: f32 = 32.0;
+const MAX_RADIUS: f32 = 24.0;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Node {
@@ -83,7 +87,7 @@ impl Freehand {
     line.pop();
   }
 
-  fn render_outer_tangents(&self, x1: f32, y1: f32, r1: f32, x2: f32, y2: f32, r2: f32) {
+  fn get_outer_tangents(&self, x1: f32, y1: f32, r1: f32, x2: f32, y2: f32, r2: f32) -> Vec<Point> {
     // Angle from 0deg horizontal line to line between circle centers
     let gamma = ((y1 - y2) / (x2 - x1)).atan();
     // Angle between line from center of c1 to center of c2 and r2 - r1 at x2, y2
@@ -96,7 +100,7 @@ impl Freehand {
     // First circle bottom tangent point
     let t0 = Point::new(x1 + r1 * (TAU - alpha).cos(), y1 + r1 * (TAU - alpha).sin());
 
-    // // Second circle bottom tangent point
+    // Second circle bottom tangent point
     let t1 = Point::new(x2 + r2 * (TAU - alpha).cos(), y2 + r2 * (TAU - alpha).sin());
 
     // First circle top tangent point
@@ -111,17 +115,18 @@ impl Freehand {
       y2 + r2 * (-TAU - theta).sin(),
     );
 
-    // let seg0 = Segment::new(t0.x, t0.y, t1.x, t1.y);
-    // seg0.draw(Some(olc::BLUE));
+    return if x1 <= x2 {
+      vec![t2, t3, t0, t1]
+    } else {
+      vec![t0, t1, t2, t3]
+    };
+  }
 
-    // let seg1 = Segment::new(t2.x, t2.y, t3.x, t3.y);
-    // seg1.draw(Some(olc::DARK_YELLOW));
-
-    // t0.draw(Some(olc::BLUE));
-    // t1.draw(Some(olc::BLUE));
-
-    // t2.draw(Some(olc::DARK_YELLOW));
-    // t3.draw(Some(olc::DARK_YELLOW));
+  fn render_outer_tangents(&self, tangents: &Vec<Point>) {
+    let t0 = tangents[0];
+    let t1 = tangents[1];
+    let t2 = tangents[2];
+    let t3 = tangents[3];
 
     olc::fill_triangle(
       t0.x as i32,
@@ -166,49 +171,195 @@ impl Freehand {
     }
   }
 
+  fn render_outer_tangent_edges(&self, tangents: &Vec<Point>) {
+    let t0 = tangents[0];
+    let t1 = tangents[1];
+    let t2 = tangents[2];
+    let t3 = tangents[3];
+
+    olc::draw_line(
+      t0.x as i32,
+      t0.y as i32,
+      t1.x as i32,
+      t1.y as i32,
+      olc::BLACK,
+      // olc::DARK_BLUE,
+    );
+    olc::draw_line(
+      t2.x as i32,
+      t2.y as i32,
+      t3.x as i32,
+      t3.y as i32,
+      olc::BLACK,
+      // olc::DARK_YELLOW,
+    );
+  }
+
   fn render(&mut self) {
-    for line in &self.lines {
-      for i in 1..line.len() {
-        let a = line[i - 1];
-        let b = line[i];
-        olc::draw_line(
-          a.point.x as i32,
-          a.point.y as i32,
-          b.point.x as i32,
-          b.point.y as i32,
-          olc::BLACK,
-        );
-      }
-    }
+    // for line in &self.lines {
+    //   for i in 1..line.len() {
+    //     let a = line[i - 1];
+    //     let b = line[i];
+    //     olc::draw_line(
+    //       a.point.x as i32,
+    //       a.point.y as i32,
+    //       b.point.x as i32,
+    //       b.point.y as i32,
+    //       olc::BLACK,
+    //     );
+    //   }
+    // }
     for line in &self.lines {
       let first = line[0];
-      olc::fill_circle(
-        first.point.x as i32,
-        first.point.y as i32,
-        (MIN_RADIUS + (first.pressure * (MAX_RADIUS - MIN_RADIUS))) as i32,
-        olc::RED,
-      );
+      // olc::fill_circle(
+      //   first.point.x as i32,
+      //   first.point.y as i32,
+      //   (MIN_RADIUS + (first.pressure * (MAX_RADIUS - MIN_RADIUS))) as i32,
+      //   olc::RED,
+      // );
 
       for i in 1..line.len() {
         let a = line[i - 1];
         let b = line[i];
-
-        olc::fill_circle(
-          b.point.x as i32,
-          b.point.y as i32,
-          (MIN_RADIUS + (b.pressure * (MAX_RADIUS - MIN_RADIUS))) as i32,
-          olc::RED,
-        );
 
         let a_radius = MIN_RADIUS + (a.pressure * (MAX_RADIUS - MIN_RADIUS));
         let b_radius = MIN_RADIUS + (b.pressure * (MAX_RADIUS - MIN_RADIUS));
 
-        self.render_outer_tangents(
+        let tangents_ab = self.get_outer_tangents(
           a.point.x, a.point.y, a_radius, b.point.x, b.point.y, b_radius,
         );
+
+        if i == 1 {
+          // Start cap
+          let arc = Arc::new(
+            a.point.x,
+            a.point.y,
+            a_radius,
+            a.point.angle_point(&tangents_ab[2]),
+            a.point.angle_point(&tangents_ab[0]),
+            true,
+          );
+
+          arc.draw_edge(olc::BLACK);
+        }
+
+        if i == line.len() - 1 {
+          // End cap
+          let arc = Arc::new(
+            b.point.x,
+            b.point.y,
+            b_radius,
+            b.point.angle_point(&tangents_ab[1]),
+            b.point.angle_point(&tangents_ab[3]),
+            true,
+          );
+
+          arc.draw_edge(olc::BLACK);
+        }
+
+        // self.render_outer_tangents(&tangents_ab);
+        self.render_outer_tangent_edges(&tangents_ab);
+
+        // Corner
+        if i < line.len() - 1 {
+          let c = line[i + 1];
+          let c_radius = MIN_RADIUS + (c.pressure * (MAX_RADIUS - MIN_RADIUS));
+
+          let tangents_bc = self.get_outer_tangents(
+            b.point.x, b.point.y, b_radius, c.point.x, c.point.y, c_radius,
+          );
+
+          // Get normalized vector of |ab|
+          let ab_u = &mut b.point.clone();
+          ab_u.sub_point(&a.point).uni();
+
+          // Get normalized vector of |bc|
+          let bc_u = &mut c.point.clone();
+          bc_u.sub_point(&b.point).uni();
+
+          if !ab_u.is_equal(bc_u) {
+            // find cross product of |ab| and |bc|
+            let cross_product = ab_u.x * bc_u.y - bc_u.x * ab_u.y;
+
+            // If the cross product is big enough, we have a corner
+            let is_right = cross_product >= 0.0;
+
+            let mut start_point = tangents_ab[3];
+            let mut end_point = tangents_bc[2];
+            if start_point.clockwise_point(&b.point, &end_point) {
+              end_point = tangents_ab[3];
+              start_point = tangents_bc[2];
+            }
+
+            if is_right {
+              start_point = tangents_ab[1];
+              end_point = tangents_bc[0];
+
+              if !start_point.clockwise_point(&b.point, &end_point) {
+                end_point = tangents_ab[1];
+                start_point = tangents_bc[0];
+              }
+            }
+
+            // start = get angle between point b and tangents_ab t1
+            let start_angle = b.point.angle_point(&start_point);
+            // end = get angle between point b and tangents_bc t0
+            let end_angle = b.point.angle_point(&end_point);
+            // // create an arc centered at a point b
+            // let arc = Arc::new(b.point.x, b.point.y, b_radius, start, end);
+            // // arc.draw(Some(olc::RED))
+
+            let mut ta = end_angle;
+            if start_angle > end_angle {
+              ta += PI * 2.0;
+            }
+            let mut distance = ta - start_angle;
+
+            if !is_right {
+              distance = (PI * 2.0) - distance;
+            }
+
+            let count = ((distance / (PI * 2.0)) * 32.0).floor() as i32;
+            let lut: &mut Vec<Point> = &mut vec![];
+
+            lut.push(if is_right { start_point } else { end_point });
+
+            for i in 1..count {
+              let angle = if is_right { start_angle } else { end_angle }
+                + (i as f32 / count as f32) * (distance);
+              let x = b.point.x + b_radius * f32::cos(angle);
+              let y = b.point.y + b_radius * f32::sin(angle);
+              lut.push(Point { x, y });
+            }
+
+            lut.push(if is_right { end_point } else { start_point });
+
+            for i in 1..lut.len() {
+              let p1 = lut[i - 1];
+              let p2 = lut[i];
+              olc::draw_line(
+                p1.x as i32,
+                p1.y as i32,
+                p2.x as i32,
+                p2.y as i32,
+                olc::BLACK,
+              );
+            }
+          }
+        }
+
+        // LEFT OR RIGHT
+        // olc::fill_circle(
+        //   b.point.x as i32,
+        //   b.point.y as i32,
+        //   (MIN_RADIUS + (b.pressure * (MAX_RADIUS - MIN_RADIUS))) as i32,
+        //   olc::RED,
+        // );
       }
     }
 
+    // let arc = Arc::new(100.0, 100.0, 100.0, 0.0, PI);
+    // arc.draw(None);
     // Debugging
     // self.p0.draw(Some(olc::MAGENTA));
     // self.p1.draw(Some(olc::RED));
@@ -364,21 +515,33 @@ impl olc::Application for Freehand {
 
 fn main() {
   let mut app = Freehand {
-    // lines: vec![vec![
-    //   Node {
-    //     point: Point::new(100.0, 100.0),
-    //     pressure: 0.5,
-    //   },
-    //   Node {
-    //     point: Point::new(200.0, 200.0),
-    //     pressure: 0.75,
-    //   },
-    //   Node {
-    //     point: Point::new(250.0, 150.0),
-    //     pressure: 0.5,
-    //   },
-    // ]],
-    lines: Vec::new(),
+    lines: vec![vec![
+      Node {
+        point: Point::new(100.0, 100.0),
+        pressure: 0.25,
+      },
+      Node {
+        point: Point::new(100.0, 200.0),
+        pressure: 0.25,
+      },
+      Node {
+        point: Point::new(100.0, 250.0),
+        pressure: 0.25,
+      },
+      // Node {
+      //   point: Point::new(75.0, 275.0),
+      //   pressure: 0.25,
+      // },
+      // Node {
+      //   point: Point::new(100.0, 300.0),
+      //   pressure: 0.1,
+      // },
+      // Node {
+      //   point: Point::new(125.0, 329.0),
+      //   pressure: 0.1,
+      // },
+    ]],
+    // lines: Vec::new(),
     prev: Point::new(0.0, 0.0),
     width: 0,
     height: 0,

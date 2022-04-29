@@ -127,15 +127,20 @@ impl Point {
     return angle;
   }
 
-  pub fn draw(&self, color: Option<olc::Pixel>) {
-    olc::fill_circle(
-      self.x as i32,
-      self.y as i32,
-      2,
-      match color {
-        Some(t) => t,
-        None => olc::BLACK,
-      },
-    );
+  pub fn clockwise_point(&self, center: &Point, other: &Point) -> bool {
+    return (center.x - self.x) * (other.y - self.y) - (other.x - self.x) * (center.y - self.y)
+      < 0.0;
+  }
+
+  pub fn cross_point(&self, other: &Point) -> f32 {
+    let p0 = &mut self.clone();
+    p0.uni();
+    let p1 = &mut other.clone();
+    p1.uni();
+    return p0.x * p1.y - p1.x * p0.y;
+  }
+
+  pub fn draw(&self, color: olc::Pixel) {
+    olc::fill_circle(self.x as i32, self.y as i32, 2, color);
   }
 }
