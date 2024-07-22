@@ -9,4 +9,4 @@ keywords = ["olc", "olcPixelGameEngine"]
 license = "MIT"
 
 [dependencies]
-olc_pixel_game_engine = "0.5.0"
+olc_pixel_game_engine = "0.6.0"
