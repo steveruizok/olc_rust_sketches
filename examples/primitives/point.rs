@@ -1,9 +1,6 @@
 extern crate olc_pixel_game_engine;
 use crate::olc_pixel_game_engine as olc;
 
-#[path = "./shared.rs"]
-mod shared;
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
   pub x: f32,
@@ -72,10 +69,13 @@ impl Point {
   pub fn get_tan(&self, x: f32, y: f32) -> Point {
     let new_pt = &mut self.clone();
     new_pt.sub(x, y).uni();
-    return Point {
-      x: new_pt.x,
-      y: new_pt.y,
-    };
+    return *new_pt;
+  }
+
+  pub fn get_tan_point(&self, other: &Point) -> Point {
+    let new_pt = &mut self.clone();
+    new_pt.sub_point(other).uni();
+    return *new_pt;
   }
   pub fn rot_with(&mut self, x: f32, y: f32, r: f32) -> &mut Point {
     if r == 0.0 {
@@ -105,6 +105,12 @@ impl Point {
       y: (self.y + other.y) / 2.0,
     };
     return pt;
+  }
+
+  pub fn lrp(&mut self, other: &Point, t: f32) -> &mut Point {
+    self.x = ((other.x - self.x) * t) + self.x;
+    self.y = ((other.y - self.y) * t) + self.y;
+    return self;
   }
 
   pub fn sub_point(&mut self, other: &Point) -> &mut Point {

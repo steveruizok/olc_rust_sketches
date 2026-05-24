@@ -210,14 +210,6 @@ impl Freehand {
     //   }
     // }
     for line in &self.lines {
-      let first = line[0];
-      // olc::fill_circle(
-      //   first.point.x as i32,
-      //   first.point.y as i32,
-      //   (MIN_RADIUS + (first.pressure * (MAX_RADIUS - MIN_RADIUS))) as i32,
-      //   olc::RED,
-      // );
-
       for i in 1..line.len() {
         let a = line[i - 1];
         let b = line[i];
@@ -287,8 +279,8 @@ impl Freehand {
             let mut start_point = tangents_ab[3];
             let mut end_point = tangents_bc[2];
             if start_point.clockwise_point(&b.point, &end_point) {
-              end_point = tangents_ab[3];
               start_point = tangents_bc[2];
+              end_point = tangents_ab[3];
             }
 
             if is_right {

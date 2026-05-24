@@ -38,7 +38,7 @@ impl Arc {
 
     let count = ((distance / PI2) * 32.0).floor() as i32;
 
-    for i in 1..count {
+    for i in 0..count {
       let angle = self.a + (i as f32 / count as f32) * (distance);
       let x = self.x + self.r * f32::cos(angle);
       let y = self.y + self.r * f32::sin(angle);
